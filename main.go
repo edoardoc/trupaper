@@ -9,20 +9,30 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/widget"
 )
 
 // paper is a widget that can be drawn on, it is a container to detect mouse events
 type paper struct {
-	widget.Icon
-
+	*fyne.Container
 	lines     []*canvas.Line
 	isDrawing bool
 	lastPos   fyne.Position
+	desktop.Hoverable
 }
 
 func newPaper() *paper {
-	icon := &paper{}
+	icon := &paper{
+		Container: &fyne.Container{
+			Objects: []fyne.CanvasObject{},
+			Layout:  nil,
+			Hidden:  false,
+			// Size:     fyne.Size{},
+			// Position: fyne.Position{},
+		},
+		lines:     []*canvas.Line{},
+		isDrawing: false,
+		lastPos:   fyne.Position{},
+	}
 	// icon.ExtendBaseWidget(icon)
 	return icon
 }
@@ -34,15 +44,15 @@ func (p *paper) MouseUp(w *desktop.MouseEvent) {
 
 func (p *paper) MouseDown(w *desktop.MouseEvent) {
 	p.isDrawing = true
-	log.Printf("I have been MouseDown %+v", w)
+	log.Printf("Event MouseDown %+v", w)
 }
 
 func (p *paper) MouseIn(_ *desktop.MouseEvent) {
-	log.Printf("I have been MouseIn")
+	log.Printf("Event MouseIn")
 }
 
 func (p *paper) MouseOut() {
-	log.Printf("I have been MouseOut")
+	log.Printf("Event MouseOut")
 }
 
 func (p *paper) MouseMoved(e *desktop.MouseEvent) {
@@ -52,7 +62,7 @@ func (p *paper) MouseMoved(e *desktop.MouseEvent) {
 			line.StrokeWidth = 5
 			line.Position1 = p.lastPos
 			line.Position2 = e.Position
-			mainContainer.Add(line)
+			p.Container.Add(line)
 
 			p.lines = append(p.lines, line)
 		}
@@ -61,7 +71,7 @@ func (p *paper) MouseMoved(e *desktop.MouseEvent) {
 		p.lastPos = fyne.Position{}
 	}
 
-	log.Printf("I have been MouseMoved")
+	log.Printf("Event MouseMoved")
 }
 
 var mainContainer *fyne.Container
@@ -69,14 +79,19 @@ var mainContainer *fyne.Container
 func main() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("Trupaper")
-	myCanvas := myWindow.Canvas()
 	mainContainer = container.NewWithoutLayout()
 
 	drawable := newPaper()
 	drawable.Resize(fyne.NewSize(500, 500))
 	mainContainer.Add(drawable)
 
-	myCanvas.SetContent(mainContainer)
+	// top := canvas.NewText("top bar", color.White)
+	// left := canvas.NewText("left", color.White)
+	// middle := canvas.NewText("content", color.White)
+	// content := container.NewBorder(top, nil, left, nil, middle)
+	// myWindow.SetContent(content)
+
+	myWindow.SetContent(mainContainer)
 	myWindow.Resize(fyne.NewSize(500, 500))
 	myWindow.ShowAndRun()
 }
