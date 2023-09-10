@@ -9,11 +9,12 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/widget"
 )
 
 // paper is a widget that can be drawn on, it is a container to detect mouse events
 type paper struct {
-	*fyne.Container
+	widget.BaseWidget
 	lines     []*canvas.Line
 	isDrawing bool
 	lastPos   fyne.Position
@@ -21,20 +22,7 @@ type paper struct {
 }
 
 func newPaper() *paper {
-	icon := &paper{
-		Container: &fyne.Container{
-			Objects: []fyne.CanvasObject{},
-			Layout:  nil,
-			Hidden:  false,
-			// Size:     fyne.Size{},
-			// Position: fyne.Position{},
-		},
-		lines:     []*canvas.Line{},
-		isDrawing: false,
-		lastPos:   fyne.Position{},
-	}
-	// icon.ExtendBaseWidget(icon)
-	return icon
+	return &paper{}
 }
 
 func (p *paper) MouseUp(w *desktop.MouseEvent) {
@@ -62,9 +50,9 @@ func (p *paper) MouseMoved(e *desktop.MouseEvent) {
 			line.StrokeWidth = 5
 			line.Position1 = p.lastPos
 			line.Position2 = e.Position
-			p.Container.Add(line)
-
 			p.lines = append(p.lines, line)
+			mainContainer.Add(line)
+			mainContainer.Refresh()
 		}
 		p.lastPos = e.Position
 	} else {
@@ -85,13 +73,10 @@ func main() {
 	drawable.Resize(fyne.NewSize(500, 500))
 	mainContainer.Add(drawable)
 
-	// top := canvas.NewText("top bar", color.White)
-	// left := canvas.NewText("left", color.White)
-	// middle := canvas.NewText("content", color.White)
-	// content := container.NewBorder(top, nil, left, nil, middle)
-	// myWindow.SetContent(content)
+	top := canvas.NewText("top bar", color.Black)
+	content := container.NewBorder(top, nil, nil, nil, mainContainer)
+	myWindow.SetContent(content)
 
-	myWindow.SetContent(mainContainer)
 	myWindow.Resize(fyne.NewSize(500, 500))
 	myWindow.ShowAndRun()
 }
