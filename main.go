@@ -15,19 +15,29 @@ import (
 // paper is a widget that can be drawn on, it is a container to detect mouse events
 type paper struct {
 	widget.BaseWidget
+	linesContainer *fyne.Container
+
 	lines     []*canvas.Line
 	isDrawing bool
 	lastPos   fyne.Position
-	desktop.Hoverable
 }
 
 func newPaper() *paper {
-	return &paper{}
+	p := &paper{}
+	p.ExtendBaseWidget(p)
+	p.linesContainer = container.NewWithoutLayout()
+	return p
+}
+
+func (p *paper) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(p.linesContainer)
 }
 
 func (p *paper) MouseUp(w *desktop.MouseEvent) {
 	p.isDrawing = false
 	p.lastPos = fyne.Position{}
+	// this is the moment where I update the remote db
+
 }
 
 func (p *paper) MouseDown(w *desktop.MouseEvent) {
@@ -51,30 +61,25 @@ func (p *paper) MouseMoved(e *desktop.MouseEvent) {
 			line.Position1 = p.lastPos
 			line.Position2 = e.Position
 			p.lines = append(p.lines, line)
-			mainContainer.Add(line)
-			mainContainer.Refresh()
+
+			p.linesContainer.Add(line)
+			p.linesContainer.Refresh()
 		}
 		p.lastPos = e.Position
 	} else {
 		p.lastPos = fyne.Position{}
 	}
-
 	log.Printf("Event MouseMoved")
 }
-
-var mainContainer *fyne.Container
 
 func main() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("Trupaper")
-	mainContainer = container.NewWithoutLayout()
 
 	drawable := newPaper()
 	drawable.Resize(fyne.NewSize(500, 500))
-	mainContainer.Add(drawable)
-
 	top := canvas.NewText("top bar", color.Black)
-	content := container.NewBorder(top, nil, nil, nil, mainContainer)
+	content := container.NewBorder(top, nil, nil, nil, drawable)
 	myWindow.SetContent(content)
 
 	myWindow.Resize(fyne.NewSize(500, 500))
