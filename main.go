@@ -15,9 +15,11 @@ import (
 // paper is a widget that can be drawn on, it is a container to detect mouse events
 type paper struct {
 	widget.BaseWidget
-	linesContainer *fyne.Container
+	mainContainer           *fyne.Container // this holds everything
+	committedLinesContainer *fyne.Container // this holds the drawing that is in the db
+	linesContainer          *fyne.Container // this holds whatever we are drawing at the moment (if its empty we are not drawing aka the mouse is not down)
+	lines                   []*canvas.Line
 
-	lines     []*canvas.Line
 	isDrawing bool
 	lastPos   fyne.Position
 }
@@ -25,19 +27,34 @@ type paper struct {
 func newPaper() *paper {
 	p := &paper{}
 	p.ExtendBaseWidget(p)
-	p.linesContainer = container.NewWithoutLayout()
+	p.committedLinesContainer = container.NewWithoutLayout()
+	p.linesContainer = container.NewWithoutLayout() // linesContainer is empty upon start
+	// here I should load the committedLines from the remote db
+
+	p.mainContainer = container.NewWithoutLayout()
+	p.mainContainer.Add(p.committedLinesContainer)
+	p.mainContainer.Add(p.linesContainer)
 	return p
 }
 
 func (p *paper) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(p.linesContainer)
+	return widget.NewSimpleRenderer(p.mainContainer)
 }
 
 func (p *paper) MouseUp(w *desktop.MouseEvent) {
 	p.isDrawing = false
 	p.lastPos = fyne.Position{}
-	// this is the moment where I update the remote db
+	p.commitCurrentLines()
 
+}
+
+func (p *paper) commitCurrentLines() {
+	// this is the moment where I update the remote db,
+
+	//  then add all the linesContainer objects to the committedLinesContainer
+
+	// I need to empty the linesContainer
+	p.linesContainer.RemoveAll()
 }
 
 func (p *paper) MouseDown(w *desktop.MouseEvent) {
