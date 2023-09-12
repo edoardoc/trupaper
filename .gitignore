@@ -1,4 +1,4 @@
-_debug_*
+__debug_*
 .env
 .DS_Store
 
