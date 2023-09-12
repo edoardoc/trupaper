@@ -1,0 +1,51 @@
+curl -X 'PUT'   'https://vault.immudb.io/ics/api/v1/ledger/default/collection/default/document' \
+  -H 'accept: application/json' \
+  -H 'X-API-Key: default.4SG8QjQ4Tqz7X6Zmrlk9eg.n7sJgSI3eJLl3Bm8-cD7_RbyQ1QpEOzBxVDjxBx8dTff9M3w' \
+  -H 'Content-Type: application/json' \
+  -d '
+  {
+    "polyline": [ {"ciccio": "pasticcio1"}, {"ciccio": "pasticcio2"} ]
+  }' | jq
+
+
+
+# each document is a polyline with a list of points
+# at every commit an id gets created and it populates a local list of ids, which is then used to address 
+# the polyline at a specific commit
+
+# upon start the list of polylines gets loaded with a get from the vault
+
+# the unmarshaling needs to be based on this:
+
+/*
+{
+  "page": 1,
+  "perPage": 100,
+  "revisions": [
+...
+    {
+      "document": {
+        "_id": "64fe109e0000000000000011721d9e3a",
+        "_vault_md": {
+          "creator": "a:93d14075-94bf-4b34-ba28-987782739da3",
+          "ts": 1694371998
+        },
+        "polyline": [ {"ciccio": "pasticcio1"}, {"ciccio": "pasticcio2"} ]
+      },
+      "revision": "",
+      "transactionId": ""
+    }
+  ],
+  "searchId": ""
+}
+*/
+
+# up to the elements "document", "_id", "_vault_md", "creator" and "ts"; after that it's a list of polylines or nothing (if it fails to unmarshal)
+ 
+# to get the full drawing in the beginning, use this call, that has to be repeated until revisions is empty, increasing the page number each time.
+
+  curl -X 'POST'  'https://vault.immudb.io/ics/api/v1/ledger/default/collection/default/documents/search' \
+  -H 'accept: application/json' \
+  -H 'X-API-Key: defaultro.2N_51XtqifTgF_HVeQ4B6g.ed9mt8glRG2g-yyLyhcJ-k1NdhOKRQx2wfMeB5lTRR6X1_eW' \
+  -H 'Content-Type: application/json' \
+  -d '{"page":1,"perPage":30}' | jq
