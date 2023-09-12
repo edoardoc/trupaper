@@ -2,10 +2,7 @@ module trupaper
 
 go 1.21.0
 
-require (
-	fyne.io/fyne/v2 v2.4.0
-	github.com/joho/godotenv v1.5.1
-)
+require fyne.io/fyne/v2 v2.4.0
 
 require (
 	fyne.io/systray v1.10.1-0.20230722100817-88df1e0ffa9a // indirect
@@ -21,6 +18,7 @@ require (
 	github.com/go-text/typesetting v0.0.0-20230616162802-9c17dd34aa4a // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
+	github.com/joho/godotenv v1.5.1
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
