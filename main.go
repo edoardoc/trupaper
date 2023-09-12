@@ -30,19 +30,22 @@ type PaperLine struct {
 	Position1 fyne.Position
 	Position2 fyne.Position
 }
+type dbLine struct {
+	documentId string
+	lines      []PaperLine
+}
 
 // paper is a widget that can be drawn on, it is a container to detect mouse events
 type paper struct {
 	widget.BaseWidget
 	mainContainer *fyne.Container // this holds everything
 
-	// TODO: these two containers can become one
+	// TODO: these two containers can now become one since there is the dblines array
 	committedLinesContainer *fyne.Container // this holds the drawing that is in the db
 	linesContainer          *fyne.Container // this holds whatever we are drawing at the moment
 
-	current        []PaperLine
-	dblines        map[string][]PaperLine
-	lastDocumentId string // this is the lastDocumentId that has been committed to the db (read only)
+	current []PaperLine
+	dblines []dbLine
 
 	isDrawing  bool
 	lastPos    fyne.Position
@@ -56,7 +59,6 @@ func newPaper() *paper {
 	p.committedLinesContainer = container.NewWithoutLayout()
 	p.linesContainer = container.NewWithoutLayout() // linesContainer is empty upon start
 
-	p.dblines = make(map[string][]PaperLine)
 	// here I should load the committedLines from the remote db
 	err := p.loadAllLinesJSON()
 	if err != nil {
@@ -73,21 +75,17 @@ func (p *paper) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(p.mainContainer)
 }
 
-func (p *paper) MouseUp(w *desktop.MouseEvent) {
-	p.isDrawing = false
-	p.lastPos = fyne.Position{}
-	p.commitCurrentLines()
-
-}
-
 func (p *paper) commitCurrentLines() {
+	if len(p.current) == 0 {
+		return
+	}
 	err := p.sendLinesJSON()
 	if err != nil {
 		log.Println("error = ", err)
 		return
 	}
 	//  then add last documentId lines to committedLinesContainer
-	p.drawCommittedData(p.dblines[p.lastDocumentId])
+	p.drawCommittedData(p.dblines[len(p.dblines)-1].lines)
 
 	// I need to empty the linesContainer
 	p.linesContainer.RemoveAll()
@@ -97,7 +95,7 @@ func (p *paper) commitCurrentLines() {
 
 func (p *paper) loadAllLinesJSON() error {
 	page := 1
-	perPage := 10
+	perPage := 100
 	var responseBody []byte
 	var responseObject struct {
 		Page      int `json:"page"`
@@ -217,9 +215,15 @@ func (p *paper) sendLinesJSON() error {
 		return err
 	}
 	documentId := data["documentId"].(string)
-	p.dblines[documentId] = p.current
-	p.lastDocumentId = documentId
+	p.dblines = append(p.dblines, dbLine{documentId: documentId, lines: p.current})
+
 	return nil
+}
+
+func (p *paper) MouseUp(w *desktop.MouseEvent) {
+	p.isDrawing = false
+	p.lastPos = fyne.Position{}
+	p.commitCurrentLines()
 }
 
 func (p *paper) MouseDown(w *desktop.MouseEvent) {
