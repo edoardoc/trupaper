@@ -4,24 +4,7 @@ curl -X 'PUT'   'https://vault.immudb.io/ics/api/v1/ledger/default/collection/de
   -H 'Content-Type: application/json' \
   -d '
   {
-    "polyline": [
-      {
-      "from": "some val",
-      "to": 123444444
-      },
-      {
-      "from": "some val",
-      "to": 123444444
-      },
-      {
-      "from": "some other val2",
-      "to": 12345
-      },
-      {
-      "from": "some other val4",
-      "to": 5555555
-      }
-    ]
+    "polyline": [ {"ciccio": "pasticcio1"}, {"ciccio": "pasticcio2"} ]
   }' | jq
 
 
@@ -47,24 +30,7 @@ curl -X 'PUT'   'https://vault.immudb.io/ics/api/v1/ledger/default/collection/de
           "creator": "a:93d14075-94bf-4b34-ba28-987782739da3",
           "ts": 1694371998
         },
-        "polyline": [
-          {
-            "from": "some val",
-            "to": 123444444
-          },
-          {
-            "from": "some val",
-            "to": 123444444
-          },
-          {
-            "from": "some other val2",
-            "to": 12345
-          },
-          {
-            "from": "some other val4",
-            "to": 5555555
-          }
-        ]
+        "polyline": [ {"ciccio": "pasticcio1"}, {"ciccio": "pasticcio2"} ]
       },
       "revision": "",
       "transactionId": ""
@@ -82,4 +48,4 @@ curl -X 'PUT'   'https://vault.immudb.io/ics/api/v1/ledger/default/collection/de
   -H 'accept: application/json' \
   -H 'X-API-Key: defaultro.2N_51XtqifTgF_HVeQ4B6g.ed9mt8glRG2g-yyLyhcJ-k1NdhOKRQx2wfMeB5lTRR6X1_eW' \
   -H 'Content-Type: application/json' \
-  -d '{"page":25,"perPage":3}' | jq
+  -d '{"page":1,"perPage":30}' | jq
