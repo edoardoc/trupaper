@@ -30,14 +30,22 @@ type PaperLine struct {
 	Position1 fyne.Position
 	Position2 fyne.Position
 }
+type dbLine struct {
+	documentId string
+	lines      []PaperLine
+}
 
 // paper is a widget that can be drawn on, it is a container to detect mouse events
 type paper struct {
 	widget.BaseWidget
-	mainContainer           *fyne.Container // this holds everything
+	mainContainer *fyne.Container // this holds everything
+
+	// TODO: these two containers can now become one since there is the dblines array
 	committedLinesContainer *fyne.Container // this holds the drawing that is in the db
 	linesContainer          *fyne.Container // this holds whatever we are drawing at the moment
-	dblines                 []PaperLine
+
+	current []PaperLine
+	dblines []dbLine
 
 	isDrawing  bool
 	lastPos    fyne.Position
@@ -67,65 +75,27 @@ func (p *paper) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(p.mainContainer)
 }
 
-func (p *paper) MouseUp(w *desktop.MouseEvent) {
-	p.isDrawing = false
-	p.lastPos = fyne.Position{}
-	p.commitCurrentLines()
-
-}
-
 func (p *paper) commitCurrentLines() {
+	if len(p.current) == 0 {
+		return
+	}
 	err := p.sendLinesJSON()
 	if err != nil {
 		log.Println("error = ", err)
 		return
 	}
-	//  then add all the p.linesContainer objects to the p.committedLinesContainer, while changing their color to red
-	for _, l := range p.linesContainer.Objects {
-		l.(*canvas.Line).StrokeColor = color.RGBA{R: 255, G: 0, B: 0, A: 255}
-		p.committedLinesContainer.Add(l)
-	}
+	//  then add last documentId lines to committedLinesContainer
+	p.drawCommittedData(p.dblines[len(p.dblines)-1].lines)
 
 	// I need to empty the linesContainer
 	p.linesContainer.RemoveAll()
-	p.dblines = []PaperLine{}
+	p.current = []PaperLine{}
 	p.mainContainer.Refresh()
 }
 
-/*
-# to get the full data in the beginning, use this call:
-
-	curl -X 'POST'  'https://vault.immudb.io/ics/api/v1/ledger/default/collection/default/documents/search' \
-	-H 'accept: application/json' \
-	-H 'X-API-Key: defaultro.2N_51XtqifTgF_HVeQ4B6g.ed9mt8glRG2g-yyLyhcJ-k1NdhOKRQx2wfMeB5lTRR6X1_eW' \
-	-H 'Content-Type: application/json' \
-	-d '{"page":25,"perPage":3}' | jq
-
-the response is going to be:
-
-	{
-	  "page": 1,
-	  "perPage": 100,
-	  "revisions": [
-	    {
-	      "document": {
-	        "_id": "64fe109e0000000000000011721d9e3a",
-	        "_vault_md": {
-	          "creator": "a:93d14075-94bf-4b34-ba28-987782739da3",
-	          "ts": 1694371998
-	        },
-	        "polyline": [ {"ciccio": "pasticcio1"}, {"ciccio": "pasticcio2"} ]
-	      },
-	      "revision": "",
-	      "transactionId": ""
-	    }
-
-that has to be repeated until field "revisions" is empty, increasing the page number each time
-*/
-
 func (p *paper) loadAllLinesJSON() error {
 	page := 1
-	perPage := 10
+	perPage := 100
 	var responseBody []byte
 	var responseObject struct {
 		Page      int `json:"page"`
@@ -208,23 +178,21 @@ func (p *paper) drawCommittedData(lines []PaperLine) {
 	}
 }
 
+// sendLinesJSON sends the current lines to the remote db
+// and stores the current lines in the dblines map with the documentId as key
 func (p *paper) sendLinesJSON() error {
 	url := "https://vault.immudb.io/ics/api/v1/ledger/default/collection/default/document"
 
-	data := map[string]interface{}{
-		"polyline": p.dblines,
-	}
-
-	jsonBytes, err := json.Marshal(data)
+	jsonBytes, err := json.Marshal(map[string]interface{}{
+		"polyline": p.current,
+	})
 	if err != nil {
 		return err
 	}
-
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
 	}
-
 	req.Header.Set("accept", "application/json")
 	req.Header.Set("X-API-Key", p.myRWapiKey)
 	req.Header.Set("Content-Type", "application/json")
@@ -237,8 +205,25 @@ func (p *paper) sendLinesJSON() error {
 	defer resp.Body.Close()
 
 	// handle response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var data map[string]interface{}
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return err
+	}
+	documentId := data["documentId"].(string)
+	p.dblines = append(p.dblines, dbLine{documentId: documentId, lines: p.current})
 
 	return nil
+}
+
+func (p *paper) MouseUp(w *desktop.MouseEvent) {
+	p.isDrawing = false
+	p.lastPos = fyne.Position{}
+	p.commitCurrentLines()
 }
 
 func (p *paper) MouseDown(w *desktop.MouseEvent) {
@@ -257,7 +242,7 @@ func (p *paper) MouseMoved(e *desktop.MouseEvent) {
 			line.Position1 = p.lastPos
 			line.Position2 = e.Position
 
-			p.dblines = append(p.dblines, PaperLine{Position1: p.lastPos, Position2: e.Position})
+			p.current = append(p.current, PaperLine{Position1: p.lastPos, Position2: e.Position})
 			p.linesContainer.Add(line)
 			p.linesContainer.Refresh()
 		}
