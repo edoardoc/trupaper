@@ -12,6 +12,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
@@ -44,8 +45,9 @@ type paper struct {
 	committedLinesContainer *fyne.Container // this holds the drawing that is in the db
 	linesContainer          *fyne.Container // this holds whatever we are drawing at the moment
 
-	current []PaperLine
-	dblines []dbLine
+	current   []PaperLine
+	dblines   []dbLine
+	deltaDraw int // this is 0 when the paper is showing the current drawing, negative values to look into the "past"
 
 	isDrawing  bool
 	lastPos    fyne.Position
@@ -68,7 +70,17 @@ func newPaper() *paper {
 	p.mainContainer = container.NewWithoutLayout()
 	p.mainContainer.Add(p.committedLinesContainer)
 	p.mainContainer.Add(p.linesContainer)
+
 	return p
+}
+
+// this repaints the dblines up to the end + deltaDraw
+func (p *paper) repaintCommittedLines() {
+	p.committedLinesContainer.RemoveAll()
+	for i := 0; i < len(p.dblines)+p.deltaDraw; i++ {
+		p.drawCommittedData(p.dblines[i].lines)
+	}
+	p.committedLinesContainer.Refresh()
 }
 
 func (p *paper) CreateRenderer() fyne.WidgetRenderer {
@@ -155,13 +167,32 @@ func (p *paper) loadAllLinesJSON() error {
 		}
 
 		for _, r := range responseObject.Revisions {
-			p.drawCommittedData(r.Document.Polyline)
+			p.dblines = append(p.dblines, dbLine{documentId: r.Document.ID, lines: r.Document.Polyline})
 		}
 		page++
 	}
-	p.committedLinesContainer.Refresh()
+	p.repaintCommittedLines()
 
 	return nil
+}
+
+func (p *paper) left() {
+	p.deltaDraw--
+	if p.deltaDraw < -len(p.dblines) {
+		p.deltaDraw = -len(p.dblines)
+	}
+
+	fmt.Println("going left, deltaDraw is ", p.deltaDraw)
+	p.repaintCommittedLines()
+}
+
+func (p *paper) right() {
+	p.deltaDraw++
+	if p.deltaDraw > 0 {
+		p.deltaDraw = 0
+	}
+	p.repaintCommittedLines()
+	fmt.Println("going right, deltaDraw is ", p.deltaDraw)
 }
 
 func (p *paper) drawCommittedData(lines []PaperLine) {
@@ -258,8 +289,15 @@ func main() {
 
 	drawable := newPaper()
 	drawable.Resize(fyne.NewSize(500, 500))
-	top := canvas.NewText("top bar", color.Black)
-	content := container.NewBorder(top, nil, nil, nil, drawable)
+	// top := canvas.NewText("top bar", color.Black)
+	ttop := container.NewGridWithColumns(3,
+		widget.NewButton("<<", drawable.left),
+
+		widget.NewSeparator(),
+
+		widget.NewButton(">>", drawable.right),
+	)
+	content := container.NewBorder(ttop, nil, nil, nil, drawable)
 	myWindow.SetContent(content)
 
 	myWindow.Resize(fyne.NewSize(500, 500))
