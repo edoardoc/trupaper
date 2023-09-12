@@ -1,4 +1,4 @@
-curl -X 'PUT'   'https://vault.immudb.io/ics/api/v1/ledger/default/collection/default/document' \
+curl -vsX 'PUT'   'https://vault.immudb.io/ics/api/v1/ledger/default/collection/default/document' \
   -H 'accept: application/json' \
   -H 'X-API-Key: default.4SG8QjQ4Tqz7X6Zmrlk9eg.n7sJgSI3eJLl3Bm8-cD7_RbyQ1QpEOzBxVDjxBx8dTff9M3w' \
   -H 'Content-Type: application/json' \
