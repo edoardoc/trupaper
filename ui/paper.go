@@ -256,12 +256,13 @@ func (p *paper) MouseUp(w *desktop.MouseEvent) {
 
 func (p *paper) MouseDown(w *desktop.MouseEvent) {
 	p.isDrawing = true
+	p.deltaDraw = 0
+	fmt.Println("Reset, deltaDraw is ", p.deltaDraw)
+	p.repaintCommittedLines()
 }
 
 func (p *paper) MouseIn(_ *desktop.MouseEvent) {}
-
-func (p *paper) MouseOut() {}
-
+func (p *paper) MouseOut()                     {}
 func (p *paper) MouseMoved(e *desktop.MouseEvent) {
 	if p.isDrawing {
 		if p.lastPos != (fyne.Position{}) {
