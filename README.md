@@ -3,9 +3,9 @@ Drawing on true paper
 
 Trupaper is a small project to draw on a canvas of 500x500 pixels, it uses Fyne as a GUI library: which is a cross platform GUI library written in Go that works on Mobile, Desktop and Web. 
 
-At the moment it is only possible to draw on the canvas with the mouse, whenever the left mouse button is pressed, the drawing starts, a collection of lines is created and when the left mouse button is released, the drawing ends and the collection of lines is added to the canvas.
+You can draw on the canvas with the mouse: whenever the left mouse button is pressed, the drawing starts: a collection of lines is created and added to the drawing.
 
-At that moment the lines collection is also sent to an *Immudb vault* server account through a REST call, if the saving of that part of collection is successful, the lines collection is added to another canvas and drawn in red color to show that that part is now NON mutable
+The lines collection is sent to an *Immudb vault* server account through a REST call, if the saving is successful, the lines collection is added to another canvas and drawn in red color to show that that part is now NON mutable
 
 Since every line drawn is directly saved in the remote Immudb vault server, upon start the app will retrieve all the lines collections saved in the vault and draw them on the canvas to allow the user to restart from the last saved state.
 
